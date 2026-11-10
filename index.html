@@ -1,0 +1,300 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Glance</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><circle cx='8' cy='8' r='6' fill='%23e8a33d'/></svg>">
+<style>
+:root{
+  --bg:#0d0f12; --panel:#14171c; --panel2:#191d23; --line:#242a32; --text:#e6e8eb; --dim:#8b939e; --faint:#5b636e;
+  --amber:#f0a83a; --amber-bg:rgba(240,168,58,.10); --red:#ef6461; --red-bg:rgba(239,100,97,.10);
+  --green:#4cc38a; --blue:#6aa9ff; --violet:#b08cff;
+  --mono:ui-monospace,SFMono-Regular,Menlo,monospace; --sans:-apple-system,BlinkMacSystemFont,"Inter","Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme: light){:root{
+  --bg:#f6f6f4; --panel:#fff; --panel2:#fafaf8; --line:#e4e4df; --text:#1b1d21; --dim:#5f6670; --faint:#9aa0a8;
+  --amber:#b86e00; --amber-bg:rgba(240,168,58,.13); --red:#c93a37; --red-bg:rgba(239,100,97,.10);
+  --green:#1d8a57; --blue:#2463c7; --violet:#7448d6;
+}}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text);font:14px/1.45 var(--sans);-webkit-font-smoothing:antialiased}
+a{color:var(--blue);text-decoration:none} a:hover{text-decoration:underline}
+header{position:sticky;top:0;z-index:5;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.bar{max-width:1500px;margin:0 auto;padding:12px 20px;display:flex;align-items:center;gap:22px;flex-wrap:wrap}
+.brand{font-weight:650;letter-spacing:.2px;display:flex;align-items:center;gap:8px}
+.brand i{width:9px;height:9px;border-radius:50%;background:var(--amber);display:inline-block}
+.stat{display:flex;align-items:baseline;gap:6px;color:var(--dim);font-size:13px}
+.stat b{font:600 20px/1 var(--sans);color:var(--text);font-variant-numeric:tabular-nums}
+.stat.need b{color:var(--amber)}
+.spacer{flex:1}
+.clock{font:12px var(--mono);color:var(--dim)} .clock.stale{color:var(--red)}
+main{max-width:1500px;margin:0 auto;padding:18px 20px 60px;display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:24px}
+@media (max-width:1100px){main{grid-template-columns:minmax(0,1fr)}}
+@media (max-width:560px){main,.bar{padding-left:16px;padding-right:16px}.age{margin-left:0}}
+h2{font:600 12px/1 var(--sans);letter-spacing:.9px;text-transform:uppercase;color:var(--dim);margin:6px 0 12px;display:flex;align-items:center;gap:8px}
+h2 .n{color:var(--faint);font-weight:500}
+section{margin-bottom:28px}
+.empty{color:var(--faint);font-size:13px;padding:14px 0}
+
+/* needs-you cards */
+.needs{display:grid;grid-template-columns:repeat(auto-fill,minmax(440px,1fr));gap:14px}
+@media (max-width:560px){.needs{grid-template-columns:minmax(0,1fr)}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;position:relative;overflow:hidden}
+.card.need{border-color:color-mix(in srgb,var(--amber) 45%,var(--line))}
+.card.need::before{content:"";position:absolute;inset:0 auto 0 0;width:3px;background:var(--amber)}
+.card.question::before{background:var(--violet)} .card.permission::before{background:var(--red)}
+.top{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.name{font:600 15px/1.2 var(--sans)}
+.chip{font:600 11px/1 var(--sans);padding:4px 7px;border-radius:999px;background:var(--amber-bg);color:var(--amber);letter-spacing:.2px}
+.chip.question{background:color-mix(in srgb,var(--violet) 14%,transparent);color:var(--violet)}
+.chip.permission{background:var(--red-bg);color:var(--red)}
+.age{margin-left:auto;font:12px var(--mono);color:var(--dim)}
+.age.old{color:var(--amber)}
+.title{color:var(--dim);font-size:13px;margin-top:3px}
+.ask{margin-top:10px;white-space:pre-wrap;word-break:break-word;font-size:13.5px;max-height:7.6em;overflow:hidden;position:relative}
+.ask.open{max-height:none}
+.ask.clip::after{content:"";position:absolute;left:0;right:0;bottom:0;height:2.2em;background:linear-gradient(transparent,var(--panel))}
+.ask.open::after{display:none}
+.recap{margin-top:10px;padding:9px 11px;border-radius:8px;background:var(--panel2);border:1px solid var(--line);font-size:13.5px}
+.recap .k,.youasked .k{font:600 10.5px/1 var(--sans);letter-spacing:.7px;text-transform:uppercase;color:var(--faint);display:block;margin-bottom:4px}
+.youasked{margin-top:10px;font-size:12.5px;color:var(--dim)}
+.youasked q{quotes:none;color:var(--text)}
+.qs{margin:10px 0 0;padding:0;list-style:none}
+.qs li{margin:6px 0} .qs .opts{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}
+.qs .opt{font-size:12px;border:1px solid var(--line);border-radius:6px;padding:2px 7px;color:var(--dim)}
+.tool{margin-top:8px;font:12.5px var(--mono);color:var(--dim)}
+.tool b{color:var(--text);font-weight:600}
+.links{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.links a{font:12px var(--mono);border:1px solid var(--line);border-radius:6px;padding:3px 7px;color:var(--dim)}
+.links a:hover{color:var(--blue);border-color:var(--blue);text-decoration:none}
+.foot{display:flex;flex-wrap:wrap;min-width:0;overflow-wrap:anywhere;gap:4px 12px;align-items:center;margin-top:10px;font:11.5px var(--mono);color:var(--faint)}
+.more{background:none;border:0;color:var(--blue);font:12px var(--sans);cursor:pointer;padding:0}
+.asks{margin:10px 0 0;padding:0;list-style:none}
+.asks li{position:relative;padding:7px 10px 7px 26px;margin-top:6px;border-radius:8px;background:var(--amber-bg);font-size:14px;font-weight:500;word-break:break-word}
+.asks li::before{content:"→";position:absolute;left:9px;color:var(--amber);font-weight:700}
+.klabel{display:block;margin-top:10px;font:600 10.5px/1 var(--sans);letter-spacing:.7px;text-transform:uppercase;color:var(--faint)}
+.klabel+.ask{margin-top:4px}
+.morebox{display:none}.morebox.open{display:block}
+.recap{max-height:none}
+.goal{margin-top:8px;font-size:12px;color:var(--dim)} .goal b{color:var(--faint);font-weight:600;letter-spacing:.5px;font-size:10.5px;text-transform:uppercase;margin-right:6px}
+
+/* in flight rows */
+.rows{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.row{display:grid;grid-template-columns:18px 190px minmax(0,1fr) 90px;gap:12px;align-items:center;padding:10px 14px;border-top:1px solid var(--line);cursor:pointer}
+.row:first-child{border-top:0}
+.row:hover{background:var(--panel2)}
+@media (max-width:700px){.row{grid-template-columns:18px minmax(0,1fr) auto}.row .mid{grid-column:2/4}}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--faint);justify-self:center}
+.dot.busy{background:var(--green);box-shadow:0 0 0 0 color-mix(in srgb,var(--green) 60%,transparent);animation:pulse 1.8s infinite}
+.dot.shell{background:var(--blue)} .dot.need{background:var(--amber)}
+@keyframes pulse{70%{box-shadow:0 0 0 7px transparent}100%{box-shadow:0 0 0 0 transparent}}
+@media (prefers-reduced-motion:reduce){.dot.busy{animation:none}}
+.rname{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mid{min-width:0}
+.mid .t{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mid .s{font:12px var(--mono);color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rage{text-align:right;font:12px var(--mono);color:var(--dim)}
+.detail{grid-column:1/-1;display:none;padding:4px 0 6px 30px;font-size:13px;white-space:pre-wrap;word-break:break-word;color:var(--dim)}
+.row.open .detail{display:block}
+
+/* memory sidebar */
+aside .item{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:8px}
+aside .it{font-weight:600;font-size:13px}
+aside .iw{font-size:12.5px;color:var(--amber);margin-top:3px}
+aside .im{font:11px var(--mono);color:var(--faint);margin-top:5px;display:flex;gap:8px;flex-wrap:wrap}
+aside .note{font-size:12px;color:var(--faint);margin:-4px 0 10px}
+.filter{background:var(--panel);border:1px solid var(--line);color:var(--text);border-radius:8px;padding:6px 10px;font:13px var(--sans);width:220px}
+.filter:focus{outline:2px solid color-mix(in srgb,var(--blue) 50%,transparent);border-color:transparent}
+@media (max-width:560px){.filter{width:100%}}
+</style>
+</head>
+<body>
+<header><div class="bar">
+  <div class="brand"><i></i>Glance</div>
+  <div class="stat need"><b id="nNeed">–</b>need you</div>
+  <div class="stat"><b id="nBusy">–</b>working</div>
+  <div class="stat"><b id="nIdle">–</b>quiet</div>
+  <div class="spacer"></div>
+  <input class="filter" id="filter" placeholder="Filter sessions…  ( / )" autocomplete="off">
+  <div class="clock" id="clock">connecting…</div>
+</div></header>
+<main>
+  <div>
+    <section><h2>Needs you <span class="n" id="hNeed"></span></h2><div class="needs" id="needs"></div></section>
+    <section><h2>In flight <span class="n" id="hBusy"></span></h2><div class="rows" id="busy"></div></section>
+    <section><h2>Quiet <span class="n" id="hIdle"></span></h2><div class="rows" id="idle"></div></section>
+  </div>
+  <aside>
+    <h2>Open on you · from memory <span class="n" id="hMem"></span></h2>
+    <div class="note">Lines of your Claude Code memory index that look like they wait on you. They can be stale.</div>
+    <div id="mem"></div>
+  </aside>
+</main>
+<script>
+const $ = (id) => document.getElementById(id);
+const el = (tag, cls, txt) => { const e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; };
+const open = new Set(JSON.parse(safeGet('glance.open') || '[]'));
+let data = null, etag = null, lastOk = 0, seenNeeds = new Set(), first = true;
+
+function safeGet(k){ try { return localStorage.getItem(k); } catch { return null; } }
+function safeSet(k,v){ try { localStorage.setItem(k,v); } catch {} }
+
+function ago(ts){
+  if (!ts) return '';
+  const s = Math.max(0, (Date.now() - (typeof ts === 'number' ? ts : Date.parse(ts))) / 1000);
+  if (s < 60) return Math.floor(s) + 's';
+  if (s < 3600) return Math.floor(s/60) + 'm';
+  if (s < 86400) return Math.floor(s/3600) + 'h ' + Math.floor(s%3600/60) + 'm';
+  return Math.floor(s/86400) + 'd ' + Math.floor(s%86400/3600) + 'h';
+}
+function linkify(parent, text){
+  const re = /https?:\/\/[^\s)>\]"'`]+/g; let i = 0, m;
+  while ((m = re.exec(text))) {
+    parent.append(text.slice(i, m.index));
+    const a = el('a', null, m[0]); a.href = m[0]; a.target = '_blank'; a.rel = 'noopener noreferrer'; parent.append(a);
+    i = m.index + m[0].length;
+  }
+  parent.append(text.slice(i));
+}
+function shortPath(p){ return (p || '').replace(/^\/(?:Users|home)\/[^/]+/, '~'); }
+const safeUrl = (u) => typeof u === 'string' && /^https:\/\//.test(u);
+function linksEl(s){
+  const box = el('div', 'links');
+  for (const p of (s.prs || []).filter(p => safeUrl(p.url))) { const a = el('a', null, (p.repo || '').split('/').pop() + ' #' + p.num); a.href = p.url; a.target = '_blank'; a.rel = 'noopener noreferrer'; box.append(a); }
+  for (const u of (s.artifacts || []).filter(safeUrl)) { const a = el('a', null, 'artifact ' + u.split('/').pop().slice(0, 8)); a.href = u; a.target = '_blank'; a.rel = 'noopener noreferrer'; box.append(a); }
+  return box.childElementCount ? box : null;
+}
+
+function needCard(s){
+  const n = s.needs, c = el('div', 'card need ' + n.kind);
+  const top = el('div', 'top');
+  top.append(el('span', 'name', s.name), el('span', 'chip ' + n.kind, n.label));
+  const since = n.since || s.statusSince;
+  const age = el('span', 'age', ago(since)); age.title = since ? new Date(since).toLocaleString() : '';
+  if (since && Date.now() - Date.parse(since) > 3600e3) age.classList.add('old');
+  top.append(age); c.append(top);
+  if (s.title && s.title !== s.name) c.append(el('div', 'title', s.title));
+  if (n.asks?.length) { const ul = el('ul', 'asks'); for (const a of n.asks) { const li = el('li'); linkify(li, a); ul.append(li); } c.append(ul); }
+
+  if (n.kind === 'question' && n.questions?.length) {
+    const ul = el('ul', 'qs');
+    for (const q of n.questions) { const li = el('li'); li.append(el('div', null, q.q)); const o = el('div', 'opts'); for (const x of q.opts) o.append(el('span', 'opt', x)); li.append(o); ul.append(li); }
+    c.append(ul);
+  }
+  if (n.tool) { const t = el('div', 'tool'); t.append(el('b', null, n.tool.name), ' ' + (n.tool.desc || '')); c.append(t); }
+  // No explicit ask (permission / question)? Show the recap up front instead.
+  if (!n.asks?.length && s.recap) { const r = el('div', 'recap'); linkify(r, s.recap.text); c.append(r); }
+  const l = linksEl(s); if (l) c.append(l);
+
+  // Everything else sits behind one toggle so the grid stays scannable.
+  const key = s.id + ':more', more = el('div', 'morebox'); if (open.has(key)) more.classList.add('open');
+  if (s.recap && n.asks?.length) { const r = el('div', 'recap'); r.append(el('span', 'k', 'Recap')); linkify(r, s.recap.text); more.append(r); }
+  if (s.said && n.kind !== 'question') { more.append(el('span', 'klabel', 'Last message · ' + ago(s.said.ts) + ' ago')); const a = el('div', 'ask open'); linkify(a, s.said.text); more.append(a); }
+  if (s.you) { const y = el('div', 'youasked'); y.append(el('span', 'k', 'You last said · ' + ago(s.you.ts) + ' ago'), el('q', null, s.you.text.length > 220 ? s.you.text.slice(0, 220) + '…' : s.you.text)); more.append(y); }
+  if (s.goal) { const g = el('div', 'goal'); g.append(el('b', null, 'Goal'), s.goal.length > 300 ? s.goal.slice(0, 300) + '…' : s.goal); more.append(g); }
+  const foot = el('div', 'foot');
+  if (more.childElementCount) {
+    const b = el('button', 'more', more.classList.contains('open') ? 'Less' : 'Context');
+    b.onclick = () => { more.classList.toggle('open'); open[more.classList.contains('open') ? 'add' : 'delete'](key); safeSet('glance.open', JSON.stringify([...open])); b.textContent = more.classList.contains('open') ? 'Less' : 'Context'; };
+    foot.append(b);
+  }
+  foot.append(el('span', null, [shortPath(s.cwd), 'pid ' + s.pid, s.kind].filter(Boolean).join(' · ')));
+  c.append(more, foot);
+  return c;
+}
+
+function row(s){
+  const r = el('div', 'row'); const key = s.id + ':row'; if (open.has(key)) r.classList.add('open');
+  r.append(el('span', 'dot ' + s.status));
+  r.append(el('span', 'rname', s.name));
+  const mid = el('div', 'mid');
+  const firstSentence = (t) => (t || '').replace(/\s+/g, ' ').split(/(?<=[.!?:])\s/)[0];
+  const nextPart = (t) => { const m = (t || '').match(/\bNext(?: step)?:?\s*([\s\S]*)$/i); return m ? m[1].replace(/^[\s,;:.-]+/, '') : ''; };
+  const head = (s.title && s.title !== s.name ? s.title : '') || (s.goal && s.goal.slice(0, 160)) || firstSentence(s.recap?.text) || s.lastPrompt || '—';
+  mid.append(el('div', 't', head));
+  let sub = '';
+  if (s.status === 'busy' && s.now) sub = s.now.name + (s.now.desc ? ' · ' + s.now.desc : '');
+  else if (s.recap) sub = nextPart(s.recap.text) ? 'Next: ' + nextPart(s.recap.text) : s.recap.text;
+  else if (s.said) sub = s.said.text.replace(/\s+/g, ' ').slice(-400);
+  mid.append(el('div', 's', sub)); r.append(mid);
+  const age = el('span', 'rage', ago(s.status === 'busy' ? s.statusSince : (s.lastActivity || s.statusSince)));
+  age.title = s.status === 'busy' ? 'working for' : 'last activity';
+  r.append(age);
+  const d = el('div', 'detail');
+  if (s.goal) d.append('Goal: ' + s.goal + '\n\n');
+  if (s.recap) { d.append('Recap: '); linkify(d, s.recap.text); d.append('\n\n'); }
+  if (s.said) linkify(d, s.said.text);
+  if (s.you) d.append('\n\nYou last said (' + ago(s.you.ts) + ' ago): ' + s.you.text);
+  d.append('\n\n' + shortPath(s.cwd) + ' · pid ' + s.pid + (s.model ? ' · ' + s.model : ''));
+  const l = linksEl(s); if (l) d.append(l);
+  r.append(d);
+  r.onclick = (e) => { if (e.target.closest('a')) return; r.classList.toggle('open'); open[r.classList.contains('open') ? 'add' : 'delete'](key); safeSet('glance.open', JSON.stringify([...open])); };
+  return r;
+}
+
+function memItem(m){
+  const it = el('div', 'item');
+  it.append(el('div', 'it', m.title));
+  if (m.waits) it.append(el('div', 'iw', m.waits));
+  const meta = el('div', 'im');
+  meta.append(el('span', null, m.project));
+  if (m.mtime) meta.append(el('span', null, 'updated ' + ago(m.mtime) + ' ago'));
+  for (const u of m.artifacts.filter(safeUrl)) { const a = el('a', null, 'artifact'); a.href = u; a.target = '_blank'; a.rel = 'noopener noreferrer'; meta.append(a); }
+  it.append(meta); it.title = m.detail;
+  return it;
+}
+
+function render(){
+  if (!data) return;
+  const q = $('filter').value.trim().toLowerCase();
+  const match = (s) => !q || [s.name, s.title, s.goal, s.cwd, s.said?.text, s.recap?.text].some(x => x && x.toLowerCase().includes(q));
+  const ss = data.sessions.filter(match);
+  const need = ss.filter(s => s.needs).sort((a, b) => Date.parse(a.needs.since || 0) - Date.parse(b.needs.since || 0));
+  const busy = ss.filter(s => !s.needs && (s.status === 'busy' || s.status === 'shell')).sort((a, b) => a.name.localeCompare(b.name));
+  const idle = ss.filter(s => !s.needs && !(s.status === 'busy' || s.status === 'shell')).sort((a, b) => (Date.parse(b.lastActivity || 0)) - (Date.parse(a.lastActivity || 0)));
+  $('nNeed').textContent = need.length; $('nBusy').textContent = busy.length; $('nIdle').textContent = idle.length;
+  $('hNeed').textContent = need.length || ''; $('hBusy').textContent = busy.length || ''; $('hIdle').textContent = idle.length || '';
+  document.title = (need.length ? '(' + need.length + ') ' : '') + 'Glance';
+  const N = $('needs'); N.replaceChildren(...need.map(needCard)); if (!need.length) N.replaceChildren(el('div', 'empty', 'Nothing is waiting on you.'));
+  const B = $('busy'); B.replaceChildren(...busy.map(row)); B.style.display = busy.length ? '' : 'none';
+  const I = $('idle'); I.replaceChildren(...idle.map(row)); I.style.display = idle.length ? '' : 'none';
+  const mem = data.memory;  // null unless GLANCE_MEMORY is on
+  document.querySelector('aside').style.display = mem ? '' : 'none';
+  document.querySelector('main').style.gridTemplateColumns = mem ? '' : 'minmax(0,1fr)';
+  if (mem) {
+    const M = $('mem'); M.replaceChildren(...mem.map(memItem)); $('hMem').textContent = mem.length || '';
+    if (!mem.length) M.replaceChildren(el('div', 'empty', 'No open items found.'));
+  }
+
+  // notify on newly appeared needs (only after the first load)
+  const ids = new Set(need.map(s => s.id + ':' + s.needs.kind + ':' + (s.needs.since || '')));
+  if (!first && 'Notification' in window && Notification.permission === 'granted') {
+    for (const s of need) { const k = s.id + ':' + s.needs.kind + ':' + (s.needs.since || ''); if (!seenNeeds.has(k)) new Notification(s.name + ' — ' + s.needs.label, { body: (s.recap?.text || s.said?.text || '').slice(0, 180), tag: s.id }); }
+  }
+  seenNeeds = ids; first = false;
+}
+
+async function poll(){
+  try {
+    const r = await fetch('/api/state', { headers: etag ? { 'If-None-Match': etag } : {} });
+    if (r.status === 200) { data = await r.json(); etag = r.headers.get('ETag'); render(); }
+    if (r.ok || r.status === 304) lastOk = Date.now();
+  } catch {}
+  setTimeout(poll, document.hidden ? 10000 : 2500);
+}
+setInterval(() => {
+  const c = $('clock'), stale = Date.now() - lastOk > 15000;
+  c.classList.toggle('stale', stale);
+  c.textContent = stale ? 'observer offline' : new Date().toISOString().slice(11, 16) + 'Z · live';
+  if (data && !stale) render(); // refresh relative ages
+}, 15000);
+$('filter').addEventListener('input', render);
+document.addEventListener('keydown', (e) => { if (e.key === '/' && document.activeElement !== $('filter')) { e.preventDefault(); $('filter').focus(); } if (e.key === 'Escape') { $('filter').value = ''; render(); $('filter').blur(); } });
+document.addEventListener('click', () => { if ('Notification' in window && Notification.permission === 'default') Notification.requestPermission(); }, { once: true });
+document.addEventListener('visibilitychange', () => { if (!document.hidden) { etag = null; } });
+poll();
+setTimeout(() => { $('clock').textContent = new Date().toISOString().slice(11, 16) + 'Z · live'; }, 1200);
+</script>
+</body>
+</html>
